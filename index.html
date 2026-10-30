@@ -1,564 +1,4 @@
-
-<!DOCTYPE html>
-<html lang="ko">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>오늘의 공부와 운동</title>
-
-<style>
-* { box-sizing: border-box; }
-
-body {
-  margin: 0;
-  font-family: Arial, "Malgun Gothic", sans-serif;
-  background: #D6D6FF;
-  color: #35358D;
-}
-
-header {
-  height: 76px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 0 30px;
-  background: white;
-}
-
-h1 { font-size: 25px; }
-
-.cash-area {
-  font-size: 22px;
-  font-weight: bold;
-}
-
-main {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 20px;
-  padding: 20px;
-}
-
-.panel {
-  background: white;
-  border-radius: 20px;
-  padding: 22px;
-  position: relative;
-  min-width: 0;
-}
-
-.panel h2 { margin-top: 0; }
-
-.description {
-  color: #9999BB;
-  font-size: 13px;
-  margin-bottom: 15px;
-}
-
-.canvas-wrap {
-  width: 100%;
-  height: 460px;
-  background: #F7F7FF;
-  border: 2px dashed #C6C6F0;
-  border-radius: 15px;
-  overflow: hidden;
-}
-
-#routeCanvas {
-  width: 100%;
-  height: 100%;
-  display: block;
-  touch-action: none;
-}
-
-#cameraWrap {
-  position: relative;
-  width: 100%;
-  height: 460px;
-  background: #25253C;
-  border-radius: 15px;
-  overflow: hidden;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-}
-
-#cameraVideo, #poseCanvas {
-  position: absolute;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  transform: scaleX(-1);
-}
-
-#poseCanvas { pointer-events: none; }
-
-.camera-message {
-  position: relative;
-  z-index: 2;
-  color: white;
-  text-align: center;
-  padding: 20px;
-}
-
-.hidden { display: none !important; }
-
-.controls {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 9px;
-  margin-top: 15px;
-}
-
-button {
-  border: none;
-  border-radius: 12px;
-  padding: 12px 16px;
-  background: #8888E8;
-  color: white;
-  font-size: 14px;
-  font-weight: bold;
-  cursor: pointer;
-}
-
-button:disabled {
-  background: #CCCCDD;
-  cursor: not-allowed;
-}
-
-button.success { background: #64B99A; }
-button.stop { background: #F08B9D; }
-button.secondary { background: #AFAFEF; }
-
-.stats {
-  display: flex;
-  gap: 10px;
-  margin-top: 15px;
-}
-
-.stat {
-  flex: 1;
-  padding: 13px 5px;
-  background: #F4F4FF;
-  border-radius: 12px;
-  text-align: center;
-  min-width: 0;
-}
-
-.stat span {
-  font-size: 12px;
-  color: #8888AA;
-}
-
-.stat strong {
-  display: block;
-  font-size: 19px;
-  margin-top: 7px;
-}
-
-.status {
-  margin-top: 15px;
-  padding: 13px;
-  border-radius: 10px;
-  background: #F3F3FF;
-  font-size: 14px;
-}
-
-.upload-label {
-  display: inline-block;
-  margin-top: 12px;
-  padding: 10px;
-  background: #E9E9FF;
-  border-radius: 10px;
-  cursor: pointer;
-  font-size: 13px;
-}
-
-input[type="file"] { display: none; }
-
-.overlay {
-  position: absolute;
-  inset: 0;
-  z-index: 10;
-  background: #35355D99;
-  display: none;
-  align-items: center;
-  justify-content: center;
-  padding: 20px;
-  border-radius: 20px;
-}
-
-.overlay.show { display: flex; }
-
-.popup {
-  background: white;
-  border-radius: 22px;
-  width: min(350px, 100%);
-  padding: 25px;
-  text-align: center;
-}
-
-.popup img {
-  width: 110px;
-  height: 110px;
-  object-fit: contain;
-}
-
-.popup h2 { margin: 10px 0; }
-
-.reward-coin {
-  font-size: 60px;
-}
-
-@media(max-width:850px) {
-  main { grid-template-columns: 1fr; }
-  .canvas-wrap, #cameraWrap { height: 380px; }
-}
-
-</style>
-</head>
-
-<body>
-
-<header>
-  <h1>🌟 오늘의 공부와 운동</h1>
-  <div class="cash-area">
-    🪙 <span id="totalCash">0.00원</span>
-  </div>
-</header>
-
-<main>
-
-<!-- 공부 화면 -->
-
-<section class="panel" id="studyPanel">
-
-<h2>📚 가상 공부 루트</h2>
-
-<div class="description">
-나만의 루트를 그리고 캐릭터와 함께 이동해 보세요!
-</div>
-
-<div class="canvas-wrap">
-  <canvas id="routeCanvas"></canvas>
-</div>
-
-<div class="controls">
-
-  <button id="drawBtn">
-    ✏️ 루트 그리기
-  </button>
-
-  <button id="completeBtn" disabled>
-    ✓ 완료
-  </button>
-
-  <button id="startStudyBtn" class="success" disabled>
-    📖 공부하기
-  </button>
-
-  <button id="stopStudyBtn" class="stop" disabled>
-    공부 완료
-  </button>
-
-  <button id="resetBtn" class="secondary">
-    다시 그리기
-  </button>
-
-</div>
-
-<label class="upload-label" for="characterUpload">
-  🖼️ 캐릭터 이미지 변경
-</label>
-
-<input type="file" id="characterUpload" accept="image/*">
-
-<div class="stats">
-
-  <div class="stat">
-    <span>공부 시간</span>
-    <strong id="studyTime">00:00</strong>
-  </div>
-
-  <div class="stat">
-    <span>이동 거리</span>
-    <strong id="studyDistance">0.000m</strong>
-  </div>
-
-  <div class="stat">
-    <span>예상 캐시</span>
-    <strong id="studyCash">0.00원</strong>
-  </div>
-
-</div>
-
-<div class="status" id="studyStatus">
-  먼저 루트를 그려 주세요!
-</div>
-
-<div class="overlay" id="studyOverlay">
-  <div class="popup" id="studyPopup"></div>
-</div>
-
-</section>
-
-
-<!-- 운동 화면 -->
-
-<section class="panel">
-
-<h2>🏃 모션 캡처 운동</h2>
-
-<div class="description">
-카메라로 나의 움직임을 인식하고 운동 시간을 기록해 보세요!
-</div>
-
-<div id="cameraWrap">
-
-  <video id="cameraVideo" autoplay playsinline muted></video>
-
-  <canvas id="poseCanvas"></canvas>
-
-  <div class="camera-message" id="cameraMessage">
-    📷<br><br>
-    운동을 시작하려면<br>
-    아래 운동하기 버튼을 눌러 주세요!
-  </div>
-
-</div>
-
-<div class="controls">
-
-  <button id="startExerciseBtn" class="success">
-    🏃 운동하기
-  </button>
-
-  <button id="stopExerciseBtn" class="stop" disabled>
-    운동 그만하기
-  </button>
-
-</div>
-
-<div class="stats">
-
-  <div class="stat">
-    <span>운동 시간</span>
-    <strong id="exerciseTime">00:00</strong>
-  </div>
-
-  <div class="stat">
-    <span>획득 캐시</span>
-    <strong id="exerciseCash">0.00원</strong>
-  </div>
-
-</div>
-
-<div class="status" id="exerciseStatus">
-  아직 운동을 시작하지 않았어요!
-</div>
-
-<div class="overlay" id="exerciseOverlay">
-  <div class="popup" id="exercisePopup"></div>
-</div>
-
-</section>
-
-</main>
-
-
-<script type="module">
-
-// ===================================
-// 1. 기본 설정
-// ===================================
-
-import {
-  FilesetResolver,
-  PoseLandmarker
-} from "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14";
-
-const canvas = document.getElementById("routeCanvas");
-const ctx = canvas.getContext("2d");
-
-const character = new Image();
-character.src = "character-face.png";
-
-let points = [];
-let routeLength = 0;
-
-let drawing = false;
-let drawingEnabled = false;
-let routeCompleted = false;
-
-let studyRunning = false;
-let studyFinished = false;
-
-let studyStartTime = 0;
-let studyElapsed = 0;
-let studyTimer = null;
-
-let exerciseRunning = false;
-let exerciseStartTime = 0;
-let exerciseElapsed = 0;
-let exerciseTimer = null;
-
-let cameraStream = null;
-let poseLandmarker = null;
-let lastVideoTime = -1;
-
-let totalCash =
-  Number(localStorage.getItem("studyExerciseCash")) || 0;
-
-let customCharacter = localStorage.getItem("customCharacter");
-
-if (customCharacter) {
-  character.src = customCharacter;
-}
-
-
-// ===================================
-// 2. 캐시 저장
-// ===================================
-
-function saveCash() {
-
-  localStorage.setItem(
-    "studyExerciseCash",
-    String(totalCash)
-  );
-
-  document.getElementById("totalCash").textContent =
-    totalCash.toFixed(2) + "원";
-}
-
-function addCash(amount) {
-
-  totalCash += amount;
-  saveCash();
-}
-
-saveCash();
-
-
-// ===================================
-// 3. 시간 표시
-// ===================================
-
-function formatTime(seconds) {
-
-  seconds = Math.floor(seconds);
-
-  const minutes = Math.floor(seconds / 60);
-  const secs = seconds % 60;
-
-  return String(minutes).padStart(2, "0")
-    + ":" +
-    String(secs).padStart(2, "0");
-}
-
-
-// ===================================
-// 4. 캔버스 크기
-// ===================================
-
-function resizeCanvas() {
-
-  const rect = canvas.getBoundingClientRect();
-  const dpr = window.devicePixelRatio || 1;
-
-  canvas.width = rect.width * dpr;
-  canvas.height = rect.height * dpr;
-
-  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-
-  renderRoute();
-}
-
-window.addEventListener("resize", resizeCanvas);
-
-
-// ===================================
-// 5. 마우스 위치
-// ===================================
-
-function getPosition(event) {
-
-  const rect = canvas.getBoundingClientRect();
-
-  return {
-    x: event.clientX - rect.left,
-    y: event.clientY - rect.top
-  };
-}
-
-
-// ===================================
-// 6. 루트 그리기 버튼
-// ===================================
-
-document.getElementById("drawBtn").onclick = () => {
-
-  if (studyRunning || studyFinished) return;
-
-  points = [];
-  routeLength = 0;
-
-  drawingEnabled = true;
-  routeCompleted = false;
-
-  document.getElementById("drawBtn").disabled = true;
-  document.getElementById("completeBtn").disabled = true;
-
-  document.getElementById("startStudyBtn").disabled = true;
-  document.getElementById("stopStudyBtn").disabled = true;
-
-  document.getElementById("studyStatus").textContent =
-    "원하는 루트를 자유롭게 그려 주세요!";
-
-  renderRoute();
-};
-
-
-// ===================================
-// 7. 펜 기능
-// ===================================
-
-canvas.addEventListener("pointerdown", event => {
-
-  if (!drawingEnabled) return;
-
-  drawing = true;
-
-  canvas.setPointerCapture(event.pointerId);
-
-  points.push(getPosition(event));
-
-  renderRoute();
-});
-
-canvas.addEventListener("pointermove", event => {
-
-  if (!drawing || !drawingEnabled) return;
-
-  points.push(getPosition(event));
-
-  renderRoute();
-});
-
-canvas.addEventListener("pointerup", () => {
-
-  drawing = false;
-
-  if (points.length > 1) {
-    document.getElementById("completeBtn").disabled = false;
-  }
-});
-
-canvas.addEventListener("pointercancel", () => {
-  drawing = false;
-});
-
-
+```html
 // ===================================
 // 8. 루트 길이 계산
 // ===================================
@@ -617,7 +57,7 @@ function getCharacterPosition(distance) {
 
 
 // ===================================
-// 10. 캐릭터가 이동한 거리
+// 10. 캐릭터 이동 거리 계산
 // ===================================
 
 function getMovedMeters() {
@@ -627,12 +67,15 @@ function getMovedMeters() {
   return studyElapsed / 60 * 0.001;
 }
 
+
 // 화면에서 캐릭터가 이동하는 속도
 // 초당 150px 이동해 움직임이 눈에 잘 보이도록 해요.
+
 function getVisualMovedPixels() {
 
   return studyElapsed * 150;
 }
+
 
 // ===================================
 // 11. 화면 그리기
@@ -727,10 +170,12 @@ function renderRoute() {
       } else {
         // 이미지 파일이 없거나 아직 불러오지 못했을 때도
         // 캐릭터 위치가 움직이는지 확인할 수 있도록 표시해요.
+
         ctx.beginPath();
         ctx.arc(pos.x, pos.y, 18, 0, Math.PI * 2);
         ctx.fillStyle = "#8888E8";
         ctx.fill();
+
         ctx.font = "24px Arial";
         ctx.textAlign = "center";
         ctx.textBaseline = "middle";
@@ -806,9 +251,15 @@ document.getElementById("startStudyBtn").onclick = () => {
 
 function updateStudy() {
 
+  // 0.1초 단위로 공부 시간 계산
+
   studyElapsed = (Date.now() - studyStartTime) / 1000;
 
+  // 실제 이동 거리 계산
+
   const movedMeters = getMovedMeters();
+
+  // 캐시 계산
 
   const earned = studyElapsed / 60;
 
@@ -820,6 +271,8 @@ function updateStudy() {
 
   document.getElementById("studyCash").textContent =
     earned.toFixed(2) + "원";
+
+  // 캐릭터 위치 갱신
 
   renderRoute();
 }
@@ -887,29 +340,29 @@ document.getElementById("stopStudyBtn").onclick = () => {
       <button id="finishStudyReward">확인</button>
     `;
 
-    
-document.getElementById("finishStudyReward").onclick = () => {
+    document.getElementById("finishStudyReward").onclick = () => {
 
-  document.getElementById("studyOverlay").classList.remove("show");
+      document.getElementById("studyOverlay").classList.remove("show");
 
-  // 다음 공부를 시작할 수 있도록 상태 초기화
-  studyFinished = false;
-  studyRunning = false;
-  drawingEnabled = false;
+      // 다음 공부를 시작할 수 있도록 상태 초기화
 
-  // 모든 버튼 다시 활성화
-  document.getElementById("drawBtn").disabled = false;
-  document.getElementById("completeBtn").disabled = false;
-  document.getElementById("startStudyBtn").disabled = false;
-  document.getElementById("stopStudyBtn").disabled = false;
-  document.getElementById("resetBtn").disabled = false;
+      studyFinished = false;
+      studyRunning = false;
+      drawingEnabled = false;
 
-  document.getElementById("studyStatus").textContent =
-    "공부 완료! 새로운 루트를 그리거나 다시 공부해 보세요!";
+      // 모든 버튼 다시 활성화
 
-  renderRoute();
-};
+      document.getElementById("drawBtn").disabled = false;
+      document.getElementById("completeBtn").disabled = false;
+      document.getElementById("startStudyBtn").disabled = false;
+      document.getElementById("stopStudyBtn").disabled = false;
+      document.getElementById("resetBtn").disabled = false;
 
+      document.getElementById("studyStatus").textContent =
+        "공부 완료! 새로운 루트를 그리거나 다시 공부해 보세요!";
+
+      renderRoute();
+    };
   };
 
   renderRoute();
