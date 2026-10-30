@@ -446,6 +446,8 @@ saveCash();
 
 function formatTime(seconds) {
 
+  seconds = Math.floor(seconds);
+
   const minutes = Math.floor(seconds / 60);
   const secs = seconds % 60;
 
@@ -618,19 +620,18 @@ function getCharacterPosition(distance) {
 // 10. 캐릭터가 이동한 거리
 // ===================================
 
-function getMovedPixels() {
+function getMovedMeters() {
 
-  // 1분당 0.1cm
-  // 화면 환산: 1cm = 약 37.8px
-
-  return studyElapsed / 60 * 3.78;
+  // 실제 기록 거리: 1분당 0.1cm (= 0.001m)
+  // 화면 캐릭터의 이동 속도와는 별도로 계산해요.
+  return studyElapsed / 60 * 0.001;
 }
+
 // 화면에서 캐릭터가 이동하는 속도
-// 초당 30px 이동
+// 초당 150px 이동해 움직임이 눈에 잘 보이도록 해요.
 function getVisualMovedPixels() {
 
-  return studyElapsed * 3000;
-
+  return studyElapsed * 150;
 }
 
 // ===================================
@@ -701,33 +702,46 @@ function renderRoute() {
 
   // 루트 완성 후 캐릭터 표시
 
-  if (routeCompleted && points.length > 0 &&
-      character.complete && character.naturalWidth > 0) {
+  if (routeCompleted && points.length > 0) {
 
-    let moved = 0;
+    let visualMoved = 0;
 
     if (studyRunning || studyFinished) {
-      moved = getMovedPixels();
+      visualMoved = getVisualMovedPixels();
     }
 
-    const pos = getCharacterPosition(moved);
+    const pos = getCharacterPosition(visualMoved);
 
     if (pos) {
 
       const size = 65;
 
-      ctx.drawImage(
-        character,
-        pos.x - size / 2,
-        pos.y - size / 2,
-        size,
-        size
-      );
+      if (character.complete && character.naturalWidth > 0) {
+        ctx.drawImage(
+          character,
+          pos.x - size / 2,
+          pos.y - size / 2,
+          size,
+          size
+        );
+      } else {
+        // 이미지 파일이 없거나 아직 불러오지 못했을 때도
+        // 캐릭터 위치가 움직이는지 확인할 수 있도록 표시해요.
+        ctx.beginPath();
+        ctx.arc(pos.x, pos.y, 18, 0, Math.PI * 2);
+        ctx.fillStyle = "#8888E8";
+        ctx.fill();
+        ctx.font = "24px Arial";
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.fillText("🙂", pos.x, pos.y);
+      }
     }
   }
 }
 
 character.onload = renderRoute;
+character.onerror = renderRoute;
 
 
 // ===================================
@@ -792,18 +806,9 @@ document.getElementById("startStudyBtn").onclick = () => {
 
 function updateStudy() {
 
-  studyElapsed = Math.floor(
-    (Date.now() - studyStartTime) / 1000
-  );
+  studyElapsed = (Date.now() - studyStartTime) / 1000;
 
-  const movedPixels = Math.min(
-    getMovedPixels(),
-    routeLength
-  );
-
-  // 3780px = 1m로 환산
-
-  const movedMeters = movedPixels / 3780;
+  const movedMeters = getMovedMeters();
 
   const earned = studyElapsed / 60;
 
@@ -811,7 +816,7 @@ function updateStudy() {
     formatTime(studyElapsed);
 
   document.getElementById("studyDistance").textContent =
-    movedMeters.toFixed(3) + "m";
+    movedMeters.toFixed(6) + "m";
 
   document.getElementById("studyCash").textContent =
     earned.toFixed(2) + "원";
@@ -837,8 +842,7 @@ document.getElementById("stopStudyBtn").onclick = () => {
 
   const earned = studyElapsed / 60;
 
-  const movedMeters =
-    Math.min(getMovedPixels(), routeLength) / 3780;
+  const movedMeters = getMovedMeters();
 
   document.getElementById("stopStudyBtn").disabled = true;
   document.getElementById("startStudyBtn").disabled = true;
@@ -856,7 +860,7 @@ document.getElementById("stopStudyBtn").onclick = () => {
 
     <p>
       오늘의 공부거리<br>
-      <strong>${movedMeters.toFixed(3)}M</strong>
+      <strong>${movedMeters.toFixed(6)}M</strong>
     </p>
 
     <button id="closeStudyMessage">확인</button>
