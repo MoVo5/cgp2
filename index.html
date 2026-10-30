@@ -625,7 +625,13 @@ function getMovedPixels() {
 
   return studyElapsed / 60 * 3.78;
 }
+// 화면에서 캐릭터가 이동하는 속도
+// 초당 30px 이동
+function getVisualMovedPixels() {
 
+  return studyElapsed * 30;
+
+}
 
 // ===================================
 // 11. 화면 그리기
