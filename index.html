@@ -1,6 +1,535 @@
-```html
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>오늘의 공부와 운동</title>
+
+<style>
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  font-family: Arial, "Malgun Gothic", sans-serif;
+  background: #D6D6FF;
+  color: #35358D;
+}
+
+header {
+  height: 76px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 30px;
+  background: white;
+}
+
+h1 { font-size: 25px; }
+
+.cash-area {
+  font-size: 22px;
+  font-weight: bold;
+}
+
+main {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  padding: 20px;
+}
+
+.panel {
+  background: white;
+  border-radius: 20px;
+  padding: 22px;
+  position: relative;
+  min-width: 0;
+}
+
+.panel h2 { margin-top: 0; }
+
+.description {
+  color: #9999BB;
+  font-size: 13px;
+  margin-bottom: 15px;
+}
+
+.canvas-wrap {
+  width: 100%;
+  height: 460px;
+  background: #F7F7FF;
+  border: 2px dashed #C6C6F0;
+  border-radius: 15px;
+  overflow: hidden;
+}
+
+#routeCanvas {
+  width: 100%;
+  height: 100%;
+  display: block;
+  touch-action: none;
+}
+
+#cameraWrap {
+  position: relative;
+  width: 100%;
+  height: 460px;
+  background: #25253C;
+  border-radius: 15px;
+  overflow: hidden;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+#cameraVideo, #poseCanvas {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transform: scaleX(-1);
+}
+
+#poseCanvas { pointer-events: none; }
+
+.camera-message {
+  position: relative;
+  z-index: 2;
+  color: white;
+  text-align: center;
+  padding: 20px;
+}
+
+.hidden { display: none !important; }
+
+.controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 9px;
+  margin-top: 15px;
+}
+
+button {
+  border: none;
+  border-radius: 12px;
+  padding: 12px 16px;
+  background: #8888E8;
+  color: white;
+  font-size: 14px;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+button:disabled {
+  background: #CCCCDD;
+  cursor: not-allowed;
+}
+
+button.success { background: #64B99A; }
+button.stop { background: #F08B9D; }
+button.secondary { background: #AFAFEF; }
+
+.stats {
+  display: flex;
+  gap: 10px;
+  margin-top: 15px;
+}
+
+.stat {
+  flex: 1;
+  padding: 13px 5px;
+  background: #F4F4FF;
+  border-radius: 12px;
+  text-align: center;
+  min-width: 0;
+}
+
+.stat span {
+  font-size: 12px;
+  color: #8888AA;
+}
+
+.stat strong {
+  display: block;
+  font-size: 19px;
+  margin-top: 7px;
+}
+
+.status {
+  margin-top: 15px;
+  padding: 13px;
+  border-radius: 10px;
+  background: #F3F3FF;
+  font-size: 14px;
+}
+
+.overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 10;
+  background: #35355D99;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  border-radius: 20px;
+}
+
+.overlay.show { display: flex; }
+
+.popup {
+  background: white;
+  border-radius: 22px;
+  width: min(350px, 100%);
+  padding: 25px;
+  text-align: center;
+}
+
+.popup h2 { margin: 10px 0; }
+
+.reward-coin {
+  font-size: 60px;
+}
+
+@media(max-width:850px) {
+  main { grid-template-columns: 1fr; }
+  .canvas-wrap, #cameraWrap { height: 380px; }
+}
+</style>
+</head>
+
+<body>
+
+<header>
+  <h1>🌟 오늘의 공부와 운동</h1>
+  <div class="cash-area">
+    🪙 <span id="totalCash">0.00원</span>
+  </div>
+</header>
+
+<main>
+
+<section class="panel" id="studyPanel">
+
+<h2>📚 가상 공부 루트</h2>
+
+<div class="description">
+나만의 루트를 그리고 캐릭터와 함께 이동해 보세요!
+</div>
+
+<div class="canvas-wrap">
+  <canvas id="routeCanvas"></canvas>
+</div>
+
+<div class="controls">
+
+  <button id="drawBtn">
+    ✏️ 루트 그리기
+  </button>
+
+  <button id="completeBtn" disabled>
+    ✓ 완료
+  </button>
+
+  <button id="startStudyBtn" class="success" disabled>
+    📖 공부하기
+  </button>
+
+  <button id="stopStudyBtn" class="stop" disabled>
+    공부 완료
+  </button>
+
+  <button id="resetBtn" class="secondary">
+    다시 그리기
+  </button>
+
+</div>
+
+<div class="stats">
+
+  <div class="stat">
+    <span>공부 시간</span>
+    <strong id="studyTime">00:00</strong>
+  </div>
+
+  <div class="stat">
+    <span>이동 거리</span>
+    <strong id="studyDistance">0.0000m</strong>
+  </div>
+
+  <div class="stat">
+    <span>예상 캐시</span>
+    <strong id="studyCash">0.00원</strong>
+  </div>
+
+</div>
+
+<div class="status" id="studyStatus">
+  먼저 루트를 그려 주세요!
+</div>
+
+<div class="overlay" id="studyOverlay">
+  <div class="popup" id="studyPopup"></div>
+</div>
+
+</section>
+
+
+<section class="panel">
+
+<h2>🏃 모션 캡처 운동</h2>
+
+<div class="description">
+카메라로 나의 움직임을 인식하고 운동 시간을 기록해 보세요!
+</div>
+
+<div id="cameraWrap">
+
+  <video id="cameraVideo" autoplay playsinline muted></video>
+
+  <canvas id="poseCanvas"></canvas>
+
+  <div class="camera-message" id="cameraMessage">
+    📷<br><br>
+    운동을 시작하려면<br>
+    아래 운동하기 버튼을 눌러 주세요!
+  </div>
+
+</div>
+
+<div class="controls">
+
+  <button id="startExerciseBtn" class="success">
+    🏃 운동하기
+  </button>
+
+  <button id="stopExerciseBtn" class="stop" disabled>
+    운동 그만하기
+  </button>
+
+</div>
+
+<div class="stats">
+
+  <div class="stat">
+    <span>운동 시간</span>
+    <strong id="exerciseTime">00:00</strong>
+  </div>
+
+  <div class="stat">
+    <span>획득 캐시</span>
+    <strong id="exerciseCash">0.00원</strong>
+  </div>
+
+</div>
+
+<div class="status" id="exerciseStatus">
+  아직 운동을 시작하지 않았어요!
+</div>
+
+<div class="overlay" id="exerciseOverlay">
+  <div class="popup" id="exercisePopup"></div>
+</div>
+
+</section>
+
+</main>
+
+
+<script type="module">
+
 // ===================================
-// 8. 루트 길이 계산
+// 1. MediaPipe 불러오기
+// ===================================
+
+import {
+  FilesetResolver,
+  PoseLandmarker
+} from "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14";
+
+
+// ===================================
+// 2. 기본 설정
+// ===================================
+
+const canvas = document.getElementById("routeCanvas");
+const ctx = canvas.getContext("2d");
+
+let points = [];
+let routeLength = 0;
+
+let drawing = false;
+let drawingEnabled = false;
+let routeCompleted = false;
+
+let studyRunning = false;
+let studyFinished = false;
+
+let studyStartTime = 0;
+let studyElapsed = 0;
+let studyTimer = null;
+
+let exerciseRunning = false;
+let exerciseStartTime = 0;
+let exerciseElapsed = 0;
+let exerciseTimer = null;
+
+let cameraStream = null;
+let poseLandmarker = null;
+let lastVideoTime = -1;
+
+let totalCash =
+  Number(localStorage.getItem("studyExerciseCash")) || 0;
+
+
+// 이전에 저장된 캐릭터 이미지 삭제
+localStorage.removeItem("customCharacter");
+
+
+// ===================================
+// 3. 캐시 저장
+// ===================================
+
+function saveCash() {
+
+  localStorage.setItem(
+    "studyExerciseCash",
+    String(totalCash)
+  );
+
+  document.getElementById("totalCash").textContent =
+    totalCash.toFixed(2) + "원";
+}
+
+function addCash(amount) {
+
+  totalCash += amount;
+  saveCash();
+}
+
+saveCash();
+
+
+// ===================================
+// 4. 시간 표시
+// ===================================
+
+function formatTime(seconds) {
+
+  seconds = Math.floor(seconds);
+
+  const minutes = Math.floor(seconds / 60);
+  const secs = seconds % 60;
+
+  return String(minutes).padStart(2, "0")
+    + ":" +
+    String(secs).padStart(2, "0");
+}
+
+
+// ===================================
+// 5. 캔버스 크기
+// ===================================
+
+function resizeCanvas() {
+
+  const rect = canvas.getBoundingClientRect();
+  const dpr = window.devicePixelRatio || 1;
+
+  canvas.width = rect.width * dpr;
+  canvas.height = rect.height * dpr;
+
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+  renderRoute();
+}
+
+window.addEventListener("resize", resizeCanvas);
+
+
+// ===================================
+// 6. 마우스 위치
+// ===================================
+
+function getPosition(event) {
+
+  const rect = canvas.getBoundingClientRect();
+
+  return {
+    x: event.clientX - rect.left,
+    y: event.clientY - rect.top
+  };
+}
+
+
+// ===================================
+// 7. 루트 그리기 버튼
+// ===================================
+
+document.getElementById("drawBtn").onclick = () => {
+
+  if (studyRunning || studyFinished) return;
+
+  points = [];
+  routeLength = 0;
+
+  drawingEnabled = true;
+  routeCompleted = false;
+
+  document.getElementById("drawBtn").disabled = true;
+  document.getElementById("completeBtn").disabled = true;
+  document.getElementById("startStudyBtn").disabled = true;
+  document.getElementById("stopStudyBtn").disabled = true;
+
+  document.getElementById("studyStatus").textContent =
+    "원하는 루트를 자유롭게 그려 주세요!";
+
+  renderRoute();
+};
+
+
+// ===================================
+// 8. 펜 기능
+// ===================================
+
+canvas.addEventListener("pointerdown", event => {
+
+  if (!drawingEnabled) return;
+
+  drawing = true;
+
+  canvas.setPointerCapture(event.pointerId);
+
+  points.push(getPosition(event));
+
+  renderRoute();
+});
+
+canvas.addEventListener("pointermove", event => {
+
+  if (!drawing || !drawingEnabled) return;
+
+  points.push(getPosition(event));
+
+  renderRoute();
+});
+
+canvas.addEventListener("pointerup", () => {
+
+  drawing = false;
+
+  if (points.length > 1) {
+    document.getElementById("completeBtn").disabled = false;
+  }
+});
+
+canvas.addEventListener("pointercancel", () => {
+  drawing = false;
+});
+
+
+// ===================================
+// 9. 루트 길이 계산
 // ===================================
 
 function calculateRouteLength() {
@@ -20,7 +549,7 @@ function calculateRouteLength() {
 
 
 // ===================================
-// 9. 캐릭터 이동 위치 계산
+// 10. 캐릭터 이동 위치 계산
 // ===================================
 
 function getCharacterPosition(distance) {
@@ -57,28 +586,29 @@ function getCharacterPosition(distance) {
 
 
 // ===================================
-// 10. 캐릭터 이동 거리 계산
+// 11. 실제 이동 거리 계산
 // ===================================
 
 function getMovedMeters() {
 
-  // 실제 기록 거리: 1분당 0.1cm (= 0.001m)
-  // 화면 캐릭터의 이동 속도와는 별도로 계산해요.
-  return studyElapsed / 60 * 0.001;
-}
-
-
-// 화면에서 캐릭터가 이동하는 속도
-// 초당 150px 이동해 움직임이 눈에 잘 보이도록 해요.
-
-function getVisualMovedPixels() {
-
-  return studyElapsed * 150;
+  // 실제 이동 거리: 1초당 0.1m
+  return studyElapsed * 0.1;
 }
 
 
 // ===================================
-// 11. 화면 그리기
+// 12. 화면 속 캐릭터 이동 속도
+// ===================================
+
+function getVisualMovedPixels() {
+
+  // 화면에서 초당 100px 이동
+  return studyElapsed * 100;
+}
+
+
+// ===================================
+// 13. 화면 그리기
 // ===================================
 
 function renderRoute() {
@@ -88,12 +618,11 @@ function renderRoute() {
   ctx.clearRect(0, 0, rect.width, rect.height);
 
   ctx.fillStyle = "#F7F7FF";
-
   ctx.fillRect(0, 0, rect.width, rect.height);
 
-  // 루트 그리기
-
   if (points.length > 0) {
+
+    // 루트 선
 
     ctx.beginPath();
 
@@ -143,7 +672,7 @@ function renderRoute() {
     ctx.fill();
   }
 
-  // 루트 완성 후 캐릭터 표시
+  // 캐릭터 표시
 
   if (routeCompleted && points.length > 0) {
 
@@ -153,44 +682,30 @@ function renderRoute() {
       visualMoved = getVisualMovedPixels();
     }
 
-    const pos = getCharacterPosition(visualMoved);
+    // 루트 끝에 도착하면 출발점부터 반복 이동
+
+    const routeProgress = routeLength > 0
+      ? visualMoved % routeLength
+      : 0;
+
+    const pos = getCharacterPosition(routeProgress);
 
     if (pos) {
 
-      const size = 65;
+      ctx.font = "36px Arial";
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
 
-      if (character.complete && character.naturalWidth > 0) {
-        ctx.drawImage(
-          character,
-          pos.x - size / 2,
-          pos.y - size / 2,
-          size,
-          size
-        );
-      } else {
-        // 이미지 파일이 없거나 아직 불러오지 못했을 때도
-        // 캐릭터 위치가 움직이는지 확인할 수 있도록 표시해요.
+      // 사진 대신 이모지 캐릭터 사용
 
-        ctx.beginPath();
-        ctx.arc(pos.x, pos.y, 18, 0, Math.PI * 2);
-        ctx.fillStyle = "#8888E8";
-        ctx.fill();
-
-        ctx.font = "24px Arial";
-        ctx.textAlign = "center";
-        ctx.textBaseline = "middle";
-        ctx.fillText("🙂", pos.x, pos.y);
-      }
+      ctx.fillText("🚶", pos.x, pos.y);
     }
   }
 }
 
-character.onload = renderRoute;
-character.onerror = renderRoute;
-
 
 // ===================================
-// 12. 완료 버튼
+// 14. 루트 완료 버튼
 // ===================================
 
 document.getElementById("completeBtn").onclick = () => {
@@ -207,8 +722,6 @@ document.getElementById("completeBtn").onclick = () => {
   document.getElementById("drawBtn").disabled = true;
   document.getElementById("completeBtn").disabled = true;
 
-  // 루트 완료 후 공부하기 활성화
-
   document.getElementById("startStudyBtn").disabled = false;
 
   document.getElementById("studyStatus").textContent =
@@ -219,7 +732,7 @@ document.getElementById("completeBtn").onclick = () => {
 
 
 // ===================================
-// 13. 공부하기 버튼
+// 15. 공부하기 버튼
 // ===================================
 
 document.getElementById("startStudyBtn").onclick = () => {
@@ -231,35 +744,40 @@ document.getElementById("startStudyBtn").onclick = () => {
   studyElapsed = 0;
   studyStartTime = Date.now();
 
-  // 공부하기를 누른 후 공부 완료 활성화
-
   document.getElementById("startStudyBtn").disabled = true;
   document.getElementById("stopStudyBtn").disabled = false;
-
   document.getElementById("resetBtn").disabled = true;
 
   document.getElementById("studyStatus").textContent =
     "공부 중이에요! 캐릭터가 루트를 따라 이동하고 있어요!";
 
   studyTimer = setInterval(updateStudy, 100);
+
+  requestAnimationFrame(animateStudyRoute);
 };
 
 
+// 캐릭터를 부드럽게 움직이는 애니메이션
+
+function animateStudyRoute() {
+
+  if (!studyRunning) return;
+
+  renderRoute();
+
+  requestAnimationFrame(animateStudyRoute);
+}
+
+
 // ===================================
-// 14. 공부 시간 및 거리
+// 16. 공부 시간 및 거리 갱신
 // ===================================
 
 function updateStudy() {
 
-  // 0.1초 단위로 공부 시간 계산
-
   studyElapsed = (Date.now() - studyStartTime) / 1000;
 
-  // 실제 이동 거리 계산
-
   const movedMeters = getMovedMeters();
-
-  // 캐시 계산
 
   const earned = studyElapsed / 60;
 
@@ -272,14 +790,12 @@ function updateStudy() {
   document.getElementById("studyCash").textContent =
     earned.toFixed(2) + "원";
 
-  // 캐릭터 위치 갱신
-
   renderRoute();
 }
 
 
 // ===================================
-// 15. 공부 완료 버튼
+// 17. 공부 완료 버튼
 // ===================================
 
 document.getElementById("stopStudyBtn").onclick = () => {
@@ -294,7 +810,6 @@ document.getElementById("stopStudyBtn").onclick = () => {
   studyFinished = true;
 
   const earned = studyElapsed / 60;
-
   const movedMeters = getMovedMeters();
 
   document.getElementById("stopStudyBtn").disabled = true;
@@ -305,7 +820,7 @@ document.getElementById("stopStudyBtn").onclick = () => {
 
   document.getElementById("studyPopup").innerHTML = `
 
-    <img src="character-face.png" alt="캐릭터">
+    <div class="reward-coin">🚶</div>
 
     <h2>공부 완료!</h2>
 
@@ -313,7 +828,7 @@ document.getElementById("stopStudyBtn").onclick = () => {
 
     <p>
       오늘의 공부거리<br>
-      <strong>${movedMeters.toFixed(6)}M</strong>
+      <strong>${movedMeters.toFixed(4)}m</strong>
     </p>
 
     <button id="closeStudyMessage">확인</button>
@@ -344,8 +859,6 @@ document.getElementById("stopStudyBtn").onclick = () => {
 
       document.getElementById("studyOverlay").classList.remove("show");
 
-      // 다음 공부를 시작할 수 있도록 상태 초기화
-
       studyFinished = false;
       studyRunning = false;
       drawingEnabled = false;
@@ -370,7 +883,7 @@ document.getElementById("stopStudyBtn").onclick = () => {
 
 
 // ===================================
-// 16. 루트 다시 그리기
+// 18. 루트 다시 그리기
 // ===================================
 
 document.getElementById("resetBtn").onclick = () => {
@@ -389,7 +902,7 @@ document.getElementById("resetBtn").onclick = () => {
   document.getElementById("stopStudyBtn").disabled = true;
 
   document.getElementById("studyTime").textContent = "00:00";
-  document.getElementById("studyDistance").textContent = "0.000m";
+  document.getElementById("studyDistance").textContent = "0.0000m";
   document.getElementById("studyCash").textContent = "0.00원";
 
   document.getElementById("studyStatus").textContent =
@@ -400,37 +913,7 @@ document.getElementById("resetBtn").onclick = () => {
 
 
 // ===================================
-// 17. 캐릭터 이미지 변경
-// ===================================
-
-document.getElementById("characterUpload").onchange = event => {
-
-  const file = event.target.files[0];
-
-  if (!file) return;
-
-  const reader = new FileReader();
-
-  reader.onload = () => {
-
-    try {
-
-      localStorage.setItem("customCharacter", reader.result);
-
-      character.src = reader.result;
-
-    } catch (error) {
-
-      alert("이미지 저장 공간이 부족해요. 기본 이미지를 이용해 주세요.");
-    }
-  };
-
-  reader.readAsDataURL(file);
-};
-
-
-// ===================================
-// 18. MediaPipe 모델 준비
+// 19. MediaPipe 모델 준비
 // ===================================
 
 async function loadPoseModel() {
@@ -458,7 +941,7 @@ async function loadPoseModel() {
 
 
 // ===================================
-// 19. 운동하기
+// 20. 운동하기 버튼
 // ===================================
 
 document.getElementById("startExerciseBtn").onclick = async () => {
@@ -527,7 +1010,7 @@ document.getElementById("startExerciseBtn").onclick = async () => {
 
 
 // ===================================
-// 20. 모션 인식
+// 21. 모션 인식
 // ===================================
 
 function detectPose() {
@@ -535,9 +1018,7 @@ function detectPose() {
   if (!exerciseRunning) return;
 
   const video = document.getElementById("cameraVideo");
-
   const poseCanvas = document.getElementById("poseCanvas");
-
   const poseCtx = poseCanvas.getContext("2d");
 
   if (video.readyState >= 2 && poseLandmarker) {
@@ -618,7 +1099,7 @@ function detectPose() {
 
 
 // ===================================
-// 21. 운동 시간 계산
+// 22. 운동 시간 계산
 // ===================================
 
 function updateExercise() {
@@ -638,7 +1119,7 @@ function updateExercise() {
 
 
 // ===================================
-// 22. 운동 그만하기
+// 23. 운동 그만하기
 // ===================================
 
 document.getElementById("stopExerciseBtn").onclick = () => {
@@ -683,7 +1164,7 @@ document.getElementById("stopExerciseBtn").onclick = () => {
 
   document.getElementById("exercisePopup").innerHTML = `
 
-    <img src="character-face.png" alt="캐릭터">
+    <div class="reward-coin">🚶</div>
 
     <h2>오늘도 정말 열심히 운동했네요!</h2>
 
@@ -727,7 +1208,7 @@ document.getElementById("stopExerciseBtn").onclick = () => {
 
 
 // ===================================
-// 23. 최초 실행
+// 24. 최초 실행
 // ===================================
 
 resizeCanvas();
