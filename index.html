@@ -1,0 +1,1209 @@
+
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>오늘의 운동과 공부</title>
+
+<style>
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: Arial, "Malgun Gothic", sans-serif;
+  background: #D6D6FF;
+  color: #35358D;
+}
+
+header {
+  height: 76px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 35px;
+  background: #fff;
+  border-bottom: 2px solid #eeeeff;
+}
+
+h1 {
+  font-size: 25px;
+  margin: 0;
+}
+
+.cash-area {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 21px;
+  font-weight: bold;
+}
+
+.coin {
+  font-size: 30px;
+}
+
+main {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  padding: 20px;
+  min-height: calc(100vh - 76px);
+}
+
+.panel {
+  position: relative;
+  background: white;
+  border-radius: 20px;
+  padding: 22px;
+  min-width: 0;
+  box-shadow: 0 5px 18px #aaaacc33;
+}
+
+.panel h2 {
+  margin: 0 0 15px;
+  font-size: 22px;
+}
+
+.description {
+  color: #8888aa;
+  font-size: 13px;
+  margin-bottom: 15px;
+}
+
+.canvas-wrap {
+  position: relative;
+  width: 100%;
+  height: 460px;
+  background: #F7F7FF;
+  border: 2px dashed #C6C6F0;
+  border-radius: 15px;
+  overflow: hidden;
+}
+
+#routeCanvas {
+  width: 100%;
+  height: 100%;
+  display: block;
+  touch-action: none;
+}
+
+#cameraWrap {
+  position: relative;
+  width: 100%;
+  height: 460px;
+  background: #24243b;
+  border-radius: 15px;
+  overflow: hidden;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+#cameraVideo,
+#poseCanvas {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transform: scaleX(-1);
+}
+
+#poseCanvas {
+  pointer-events: none;
+}
+
+.camera-message {
+  position: relative;
+  z-index: 2;
+  color: white;
+  text-align: center;
+  padding: 20px;
+  font-size: 17px;
+}
+
+.camera-message.hidden {
+  display: none;
+}
+
+.controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 9px;
+  margin-top: 16px;
+}
+
+button {
+  border: none;
+  border-radius: 12px;
+  padding: 12px 17px;
+  background: #8888E8;
+  color: white;
+  font-size: 14px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: 0.2s;
+}
+
+button:hover:not(:disabled) {
+  filter: brightness(0.93);
+  transform: translateY(-2px);
+}
+
+button:disabled {
+  background: #ccccdd;
+  cursor: not-allowed;
+  transform: none;
+}
+
+button.secondary {
+  background: #AFAFEF;
+}
+
+button.stop {
+  background: #F08B9D;
+}
+
+button.success {
+  background: #64B99A;
+}
+
+button.dark {
+  background: #55558C;
+}
+
+.status {
+  margin-top: 15px;
+  background: #F3F3FF;
+  padding: 12px;
+  border-radius: 10px;
+  font-size: 14px;
+}
+
+.stats {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.stat {
+  flex: 1;
+  background: #F4F4FF;
+  border-radius: 12px;
+  padding: 12px;
+  text-align: center;
+}
+
+.stat strong {
+  display: block;
+  font-size: 20px;
+  margin-top: 5px;
+}
+
+.small {
+  font-size: 12px;
+  color: #8888AA;
+}
+
+input[type="file"] {
+  display: none;
+}
+
+.upload-label {
+  display: inline-block;
+  padding: 11px 14px;
+  background: #E9E9FF;
+  border-radius: 10px;
+  cursor: pointer;
+  font-size: 13px;
+  margin-top: 12px;
+}
+
+.overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 10;
+  background: #35355D99;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  border-radius: 20px;
+}
+
+.overlay.show {
+  display: flex;
+}
+
+.popup {
+  background: white;
+  border-radius: 22px;
+  width: min(350px, 100%);
+  padding: 28px 20px;
+  text-align: center;
+  box-shadow: 0 10px 35px #0003;
+  animation: appear 0.3s ease;
+}
+
+.popup h2 {
+  font-size: 23px;
+  margin: 8px 0 15px;
+}
+
+.popup p {
+  line-height: 1.7;
+}
+
+.popup img {
+  width: 115px;
+  height: 115px;
+  object-fit: contain;
+}
+
+.reward-coin {
+  font-size: 60px;
+  animation: bounce 0.8s infinite alternate;
+}
+
+@keyframes appear {
+  from { opacity: 0; transform: scale(.8); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+@keyframes bounce {
+  to { transform: translateY(-10px); }
+}
+
+@media(max-width: 850px) {
+  main {
+    grid-template-columns: 1fr;
+  }
+
+  .canvas-wrap,
+  #cameraWrap {
+    height: 380px;
+  }
+
+  header {
+    padding: 0 15px;
+  }
+}
+</style>
+</head>
+
+<body>
+
+<header>
+  <h1>🌟 오늘의 공부와 운동</h1>
+  <div class="cash-area">
+    <span class="coin">🪙</span>
+    <span id="totalCash">0.00원</span>
+  </div>
+</header>
+
+<main>
+
+<!-- 왼쪽: 공부 루트 -->
+<section class="panel" id="studyPanel">
+
+  <h2>📚 가상 공부 루트</h2>
+  <div class="description">
+    나만의 루트를 그리고 캐릭터와 함께 이동해 보세요!
+  </div>
+
+  <div class="canvas-wrap">
+    <canvas id="routeCanvas"></canvas>
+  </div>
+
+  <div class="controls">
+    <button id="drawBtn">✏️ 루트 그리기</button>
+    <button id="completeBtn" disabled>✓ 완료</button>
+    <button id="startStudyBtn" class="success" disabled>
+      공부 시작
+    </button>
+    <button id="stopStudyBtn" class="stop" disabled>
+      공부 멈추기
+    </button>
+    <button id="resetBtn" class="secondary">
+      다시 그리기
+    </button>
+  </div>
+
+  <label class="upload-label" for="characterUpload">
+    🖼️ 캐릭터 이미지 변경
+  </label>
+  <input type="file" id="characterUpload" accept="image/*">
+
+  <div class="stats">
+    <div class="stat">
+      <span class="small">공부 시간</span>
+      <strong id="studyTime">00:00</strong>
+    </div>
+    <div class="stat">
+      <span class="small">이동 거리</span>
+      <strong id="studyDistance">0.000m</strong>
+    </div>
+    <div class="stat">
+      <span class="small">예상 캐시</span>
+      <strong id="studyCash">0.00원</strong>
+    </div>
+  </div>
+
+  <div class="status" id="studyStatus">
+    먼저 '루트 그리기' 버튼을 눌러 주세요!
+  </div>
+
+  <div class="overlay" id="studyOverlay">
+    <div class="popup" id="studyPopup"></div>
+  </div>
+
+</section>
+
+
+<!-- 오른쪽: 운동 모션 캡처 -->
+<section class="panel">
+
+  <h2>🏃 모션 캡처 운동</h2>
+  <div class="description">
+    카메라로 나의 움직임을 인식하고 운동 시간을 기록해 보세요!
+  </div>
+
+  <div id="cameraWrap">
+
+    <video id="cameraVideo" autoplay playsinline muted></video>
+    <canvas id="poseCanvas"></canvas>
+
+    <div class="camera-message" id="cameraMessage">
+      📷<br><br>
+      운동을 시작하려면<br>
+      아래 운동하기 버튼을 눌러 주세요!
+    </div>
+
+  </div>
+
+  <div class="controls">
+    <button id="startExerciseBtn" class="success">
+      🏃 운동하기
+    </button>
+
+    <button id="stopExerciseBtn" class="stop" disabled>
+      운동 그만하기
+    </button>
+  </div>
+
+  <div class="stats">
+    <div class="stat">
+      <span class="small">운동 시간</span>
+      <strong id="exerciseTime">00:00</strong>
+    </div>
+
+    <div class="stat">
+      <span class="small">획득 캐시</span>
+      <strong id="exerciseCash">0.00원</strong>
+    </div>
+  </div>
+
+  <div class="status" id="exerciseStatus">
+    아직 운동을 시작하지 않았어요!
+  </div>
+
+  <div class="overlay" id="exerciseOverlay">
+    <div class="popup" id="exercisePopup"></div>
+  </div>
+
+</section>
+
+</main>
+
+
+<script type="module">
+
+// =====================================
+// 1. 기본 설정
+// =====================================
+
+const STORAGE_KEY = "studyExerciseCash";
+
+let totalCash = Number(localStorage.getItem(STORAGE_KEY)) || 0;
+
+const character = new Image();
+character.src = "character.png";
+
+const canvas = document.getElementById("routeCanvas");
+const ctx = canvas.getContext("2d");
+
+let drawing = false;
+let drawingEnabled = false;
+let routeCompleted = false;
+let studyRunning = false;
+
+let points = [];
+let routeLength = 0;
+let studyStartTime = 0;
+let studyElapsed = 0;
+let studyTimer = null;
+
+let exerciseRunning = false;
+let exerciseStartTime = 0;
+let exerciseElapsed = 0;
+let exerciseTimer = null;
+
+let cameraStream = null;
+let poseLandmarker = null;
+let lastVideoTime = -1;
+let exerciseAward = 0;
+let studyAward = 0;
+
+
+// =====================================
+// 2. 캐시 표시 및 저장
+// =====================================
+
+function saveCash() {
+  localStorage.setItem(STORAGE_KEY, String(totalCash));
+  document.getElementById("totalCash").textContent =
+    totalCash.toFixed(2) + "원";
+}
+
+saveCash();
+
+function addCash(amount) {
+  totalCash += amount;
+  saveCash();
+}
+
+
+// =====================================
+// 3. 시간 표시
+// =====================================
+
+function formatTime(seconds) {
+  const minutes = Math.floor(seconds / 60);
+  const secs = seconds % 60;
+
+  return String(minutes).padStart(2, "0") +
+    ":" +
+    String(secs).padStart(2, "0");
+}
+
+
+// =====================================
+// 4. 캔버스 크기 설정
+// =====================================
+
+function resizeCanvas() {
+  const rect = canvas.getBoundingClientRect();
+  const dpr = window.devicePixelRatio || 1;
+
+  canvas.width = rect.width * dpr;
+  canvas.height = rect.height * dpr;
+
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+  renderRoute();
+}
+
+window.addEventListener("resize", resizeCanvas);
+
+
+// =====================================
+// 5. 루트 그리기
+// =====================================
+
+function getPosition(event) {
+  const rect = canvas.getBoundingClientRect();
+
+  return {
+    x: event.clientX - rect.left,
+    y: event.clientY - rect.top
+  };
+}
+
+document.getElementById("drawBtn").addEventListener("click", () => {
+
+  if (studyRunning) return;
+
+  drawingEnabled = true;
+  routeCompleted = false;
+  points = [];
+  routeLength = 0;
+
+  document.getElementById("drawBtn").disabled = true;
+  document.getElementById("completeBtn").disabled = true;
+  document.getElementById("startStudyBtn").disabled = true;
+  document.getElementById("studyStatus").textContent =
+    "화면에서 자유롭게 루트를 그려 주세요!";
+
+  renderRoute();
+});
+
+
+canvas.addEventListener("pointerdown", (event) => {
+
+  if (!drawingEnabled) return;
+
+  drawing = true;
+  canvas.setPointerCapture(event.pointerId);
+
+  points.push(getPosition(event));
+
+  renderRoute();
+});
+
+
+canvas.addEventListener("pointermove", (event) => {
+
+  if (!drawing || !drawingEnabled) return;
+
+  points.push(getPosition(event));
+
+  renderRoute();
+});
+
+
+canvas.addEventListener("pointerup", () => {
+  drawing = false;
+
+  if (points.length > 1) {
+    document.getElementById("completeBtn").disabled = false;
+  }
+});
+
+
+canvas.addEventListener("pointercancel", () => {
+  drawing = false;
+});
+
+
+// =====================================
+// 6. 루트 길이 계산
+// =====================================
+
+function calculateRouteLength() {
+
+  let length = 0;
+
+  for (let i = 1; i < points.length; i++) {
+
+    const dx = points[i].x - points[i - 1].x;
+    const dy = points[i].y - points[i - 1].y;
+
+    length += Math.sqrt(dx * dx + dy * dy);
+  }
+
+  return length;
+}
+
+
+// =====================================
+// 7. 캐릭터 이동 위치 계산
+// =====================================
+
+function getCharacterPosition(distance) {
+
+  if (points.length === 0) return null;
+
+  let remaining = Math.min(distance, routeLength);
+
+  for (let i = 1; i < points.length; i++) {
+
+    const p1 = points[i - 1];
+    const p2 = points[i];
+
+    const dx = p2.x - p1.x;
+    const dy = p2.y - p1.y;
+
+    const segment = Math.sqrt(dx * dx + dy * dy);
+
+    if (remaining <= segment) {
+
+      const ratio = segment === 0 ? 0 : remaining / segment;
+
+      return {
+        x: p1.x + dx * ratio,
+        y: p1.y + dy * ratio
+      };
+    }
+
+    remaining -= segment;
+  }
+
+  return points[points.length - 1];
+}
+
+
+// =====================================
+// 8. 루트 및 캐릭터 화면 그리기
+// =====================================
+
+function renderRoute() {
+
+  const rect = canvas.getBoundingClientRect();
+
+  ctx.clearRect(0, 0, rect.width, rect.height);
+
+  // 배경
+  ctx.fillStyle = "#F7F7FF";
+  ctx.fillRect(0, 0, rect.width, rect.height);
+
+  // 루트
+  if (points.length > 0) {
+
+    ctx.beginPath();
+    ctx.moveTo(points[0].x, points[0].y);
+
+    for (let i = 1; i < points.length; i++) {
+      ctx.lineTo(points[i].x, points[i].y);
+    }
+
+    ctx.strokeStyle = "#9999EE";
+    ctx.lineWidth = 5;
+    ctx.lineCap = "round";
+    ctx.lineJoin = "round";
+    ctx.stroke();
+
+    // 시작점
+    ctx.beginPath();
+    ctx.arc(points[0].x, points[0].y, 7, 0, Math.PI * 2);
+    ctx.fillStyle = "#63B997";
+    ctx.fill();
+
+    // 끝점
+    const last = points[points.length - 1];
+
+    ctx.beginPath();
+    ctx.arc(last.x, last.y, 7, 0, Math.PI * 2);
+    ctx.fillStyle = "#F08B9D";
+    ctx.fill();
+  }
+
+  // 캐릭터 이동
+  if (character.complete && character.naturalWidth > 0 &&
+      points.length > 0) {
+
+    let movedDistance = 0;
+
+    if (studyRunning) {
+      movedDistance = Math.min(
+        studyElapsed * 3.78 / 60,
+        routeLength
+      );
+    } else if (studyAward > 0) {
+      movedDistance = Math.min(
+        studyAward * 3.78,
+        routeLength
+      );
+    }
+
+    const pos = getCharacterPosition(movedDistance);
+
+    if (pos) {
+      ctx.drawImage(
+        character,
+        pos.x - 25,
+        pos.y - 25,
+        50,
+        50
+      );
+    }
+  }
+}
+
+character.onload = renderRoute;
+
+
+// =====================================
+// 9. 루트 완료
+// =====================================
+
+document.getElementById("completeBtn").addEventListener("click", () => {
+
+  if (points.length < 2) return;
+
+  drawingEnabled = false;
+  routeCompleted = true;
+
+  routeLength = calculateRouteLength();
+
+  document.getElementById("drawBtn").disabled = false;
+  document.getElementById("completeBtn").disabled = true;
+  document.getElementById("startStudyBtn").disabled = false;
+
+  document.getElementById("studyStatus").textContent =
+    "루트 완성! 이제 공부를 시작할 수 있어요.";
+
+  renderRoute();
+});
+
+
+// =====================================
+// 10. 루트 초기화
+// =====================================
+
+document.getElementById("resetBtn").addEventListener("click", () => {
+
+  if (studyRunning) return;
+
+  drawingEnabled = false;
+  routeCompleted = false;
+
+  points = [];
+  routeLength = 0;
+  studyAward = 0;
+
+  document.getElementById("drawBtn").disabled = false;
+  document.getElementById("completeBtn").disabled = true;
+  document.getElementById("startStudyBtn").disabled = true;
+
+  document.getElementById("studyDistance").textContent = "0.000m";
+  document.getElementById("studyTime").textContent = "00:00";
+  document.getElementById("studyCash").textContent = "0.00원";
+
+  document.getElementById("studyStatus").textContent =
+    "새로운 루트를 그려 주세요!";
+
+  renderRoute();
+});
+
+
+// =====================================
+// 11. 공부 시작
+// =====================================
+
+document.getElementById("startStudyBtn").addEventListener("click", () => {
+
+  if (!routeCompleted || studyRunning) return;
+
+  studyRunning = true;
+  studyElapsed = 0;
+  studyStartTime = Date.now();
+
+  document.getElementById("startStudyBtn").disabled = true;
+  document.getElementById("stopStudyBtn").disabled = false;
+  document.getElementById("resetBtn").disabled = true;
+
+  document.getElementById("studyStatus").textContent =
+    "공부 중이에요! 캐릭터가 루트를 따라 이동하고 있어요.";
+
+  studyTimer = setInterval(updateStudy, 100);
+});
+
+
+// =====================================
+// 12. 공부 시간 및 이동 거리 업데이트
+// =====================================
+
+function updateStudy() {
+
+  studyElapsed = Math.floor((Date.now() - studyStartTime) / 1000);
+
+  // 1분당 0.1cm = 약 3.78px
+  const movedPx = studyElapsed / 60 * 3.78;
+
+  // px를 cm로 변환하고 m로 변환
+  const movedMeters = Math.min(movedPx, routeLength) / 3780;
+
+  const earned = studyElapsed / 60;
+
+  document.getElementById("studyTime").textContent =
+    formatTime(studyElapsed);
+
+  document.getElementById("studyDistance").textContent =
+    movedMeters.toFixed(3) + "m";
+
+  document.getElementById("studyCash").textContent =
+    earned.toFixed(2) + "원";
+
+  renderRoute();
+}
+
+
+// =====================================
+// 13. 공부 멈추기 및 보상
+// =====================================
+
+document.getElementById("stopStudyBtn").addEventListener("click", () => {
+
+  if (!studyRunning) return;
+
+  clearInterval(studyTimer);
+
+  updateStudy();
+
+  studyRunning = false;
+
+  studyAward = studyElapsed / 60;
+
+  const movedMeters =
+    Math.min(studyElapsed / 60 * 3.78, routeLength) / 3780;
+
+  document.getElementById("stopStudyBtn").disabled = true;
+  document.getElementById("startStudyBtn").disabled = false;
+  document.getElementById("resetBtn").disabled = false;
+
+  document.getElementById("studyPopup").innerHTML = `
+    <img src="character.png" alt="캐릭터">
+    <h2>공부 완료!</h2>
+    <p>오늘도 고생 많았어! 💜</p>
+    <p>오늘의 공부거리<br>
+    <strong>${movedMeters.toFixed(3)}M</strong></p>
+    <button id="closeStudyMessage">확인</button>
+  `;
+
+  document.getElementById("studyOverlay").classList.add("show");
+
+  document.getElementById("closeStudyMessage").onclick = () => {
+
+    addCash(studyAward);
+
+    document.getElementById("studyPopup").innerHTML = `
+      <div class="reward-coin">🪙</div>
+      <h2>캐시 획득!</h2>
+      <p>열심히 공부한 보상이야!</p>
+      <h2 style="color:#D6A52C">
+        +${studyAward.toFixed(2)}원
+      </h2>
+      <button id="finishStudyReward">확인</button>
+    `;
+
+    document.getElementById("finishStudyReward").onclick = () => {
+      document.getElementById("studyOverlay").classList.remove("show");
+      renderRoute();
+    };
+  };
+
+  renderRoute();
+});
+
+
+// =====================================
+// 14. 캐릭터 이미지 변경
+// =====================================
+
+document.getElementById("characterUpload").addEventListener("change", (event) => {
+
+  const file = event.target.files[0];
+
+  if (!file) return;
+
+  const reader = new FileReader();
+
+  reader.onload = () => {
+
+    character.src = reader.result;
+
+    try {
+      localStorage.setItem("customCharacter", reader.result);
+    } catch (error) {
+      alert("이미지 저장 공간이 부족합니다. 기본 character.png를 이용해 주세요.");
+    }
+  };
+
+  reader.readAsDataURL(file);
+});
+
+const savedCharacter = localStorage.getItem("customCharacter");
+
+if (savedCharacter) {
+  character.src = savedCharacter;
+}
+
+
+// =====================================
+// 15. MediaPipe 모션 캡처 준비
+// =====================================
+
+import {
+  FilesetResolver,
+  PoseLandmarker
+} from "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14";
+
+async function loadPoseModel() {
+
+  if (poseLandmarker) return;
+
+  document.getElementById("exerciseStatus").textContent =
+    "모션 인식 모델을 준비하고 있어요...";
+
+  const vision = await FilesetResolver.forVisionTasks(
+    "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/wasm"
+  );
+
+  poseLandmarker = await PoseLandmarker.createFromOptions(vision, {
+
+    baseOptions: {
+      modelAssetPath:
+        "https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_lite/float16/1/pose_landmarker_lite.task",
+
+      delegate: "GPU"
+    },
+
+    runningMode: "VIDEO",
+    numPoses: 1
+  });
+}
+
+
+// =====================================
+// 16. 운동 시작 및 카메라 권한 요청
+// =====================================
+
+document.getElementById("startExerciseBtn").addEventListener("click", async () => {
+
+  if (exerciseRunning) return;
+
+  try {
+
+    document.getElementById("exerciseStatus").textContent =
+      "카메라 권한을 요청하고 있어요!";
+
+    // 실제 카메라 사용 권한 요청
+    cameraStream = await navigator.mediaDevices.getUserMedia({
+      video: {
+        facingMode: "user"
+      },
+      audio: false
+    });
+
+    const video = document.getElementById("cameraVideo");
+
+    video.srcObject = cameraStream;
+
+    await video.play();
+
+    // MediaPipe 모델 불러오기
+    await loadPoseModel();
+
+    exerciseRunning = true;
+    exerciseElapsed = 0;
+    exerciseStartTime = Date.now();
+
+    document.getElementById("cameraMessage").classList.add("hidden");
+
+    document.getElementById("startExerciseBtn").disabled = true;
+    document.getElementById("stopExerciseBtn").disabled = false;
+
+    document.getElementById("exerciseStatus").textContent =
+      "모션 인식 중! 열심히 운동해 봐요!";
+
+    exerciseTimer = setInterval(updateExercise, 100);
+
+    requestAnimationFrame(detectPose);
+
+  } catch (error) {
+
+    console.error("카메라 또는 모션 인식 오류:", error);
+
+    document.getElementById("cameraMessage").classList.remove("hidden");
+
+    document.getElementById("cameraMessage").innerHTML =
+      "화면을 켜주세요!<br>우리 같이 공부해야죠!";
+
+    document.getElementById("exerciseStatus").textContent =
+      "카메라 권한을 허용해야 운동을 시작할 수 있어요.";
+
+    if (cameraStream) {
+      cameraStream.getTracks().forEach(track => track.stop());
+      cameraStream = null;
+    }
+
+    document.getElementById("cameraVideo").srcObject = null;
+  }
+});
+
+
+// =====================================
+// 17. 실제 신체 관절 인식
+// =====================================
+
+function detectPose() {
+
+  if (!exerciseRunning) return;
+
+  const video = document.getElementById("cameraVideo");
+  const poseCanvas = document.getElementById("poseCanvas");
+  const poseCtx = poseCanvas.getContext("2d");
+
+  if (video.readyState >= 2 && poseLandmarker) {
+
+    if (video.currentTime !== lastVideoTime) {
+
+      lastVideoTime = video.currentTime;
+
+      const result = poseLandmarker.detectForVideo(
+        video,
+        performance.now()
+      );
+
+      poseCanvas.width = video.videoWidth;
+      poseCanvas.height = video.videoHeight;
+
+      poseCtx.clearRect(0, 0, poseCanvas.width, poseCanvas.height);
+
+      if (result.landmarks && result.landmarks.length > 0) {
+
+        const landmarks = result.landmarks[0];
+
+        // 관절 연결선
+        const connections = PoseLandmarker.POSE_CONNECTIONS;
+
+        poseCtx.strokeStyle = "#8EFFC1";
+        poseCtx.lineWidth = 3;
+
+        for (const connection of connections) {
+
+          const start = landmarks[connection.start];
+          const end = landmarks[connection.end];
+
+          if (start.visibility < 0.4 || end.visibility < 0.4) {
+            continue;
+          }
+
+          poseCtx.beginPath();
+
+          poseCtx.moveTo(
+            start.x * poseCanvas.width,
+            start.y * poseCanvas.height
+          );
+
+          poseCtx.lineTo(
+            end.x * poseCanvas.width,
+            end.y * poseCanvas.height
+          );
+
+          poseCtx.stroke();
+        }
+
+        // 관절 점
+        for (const point of landmarks) {
+
+          if (point.visibility < 0.4) continue;
+
+          poseCtx.beginPath();
+
+          poseCtx.arc(
+            point.x * poseCanvas.width,
+            point.y * poseCanvas.height,
+            4,
+            0,
+            Math.PI * 2
+          );
+
+          poseCtx.fillStyle = "#FFFFFF";
+          poseCtx.fill();
+        }
+      }
+    }
+  }
+
+  requestAnimationFrame(detectPose);
+}
+
+
+// =====================================
+// 18. 운동 시간 및 캐시 계산
+// =====================================
+
+function updateExercise() {
+
+  exerciseElapsed = Math.floor(
+    (Date.now() - exerciseStartTime) / 1000
+  );
+
+  const earned = exerciseElapsed / 60;
+
+  document.getElementById("exerciseTime").textContent =
+    formatTime(exerciseElapsed);
+
+  document.getElementById("exerciseCash").textContent =
+    earned.toFixed(2) + "원";
+}
+
+
+// =====================================
+// 19. 운동 그만하기
+// =====================================
+
+document.getElementById("stopExerciseBtn").addEventListener("click", () => {
+
+  if (!exerciseRunning) return;
+
+  clearInterval(exerciseTimer);
+
+  updateExercise();
+
+  exerciseRunning = false;
+
+  exerciseAward = exerciseElapsed / 60;
+
+  // 카메라 종료
+  if (cameraStream) {
+
+    cameraStream.getTracks().forEach(track => track.stop());
+
+    cameraStream = null;
+  }
+
+  document.getElementById("cameraVideo").srcObject = null;
+
+  const poseCanvas = document.getElementById("poseCanvas");
+  poseCanvas.getContext("2d").clearRect(
+    0, 0, poseCanvas.width, poseCanvas.height
+  );
+
+  document.getElementById("cameraMessage").classList.remove("hidden");
+
+  document.getElementById("cameraMessage").innerHTML =
+    "오늘의 운동이 끝났어요! 💜";
+
+  document.getElementById("startExerciseBtn").disabled = false;
+  document.getElementById("stopExerciseBtn").disabled = true;
+
+  document.getElementById("exerciseStatus").textContent =
+    "운동을 완료했어요! 정말 수고했어요.";
+
+  document.getElementById("exercisePopup").innerHTML = `
+    <img src="character.png" alt="캐릭터">
+    <h2>오늘도 정말 열심히 운동했네요!</h2>
+    <p>내일 또 봐요! 💜</p>
+    <p>오늘 운동 시간<br>
+    <strong>${formatTime(exerciseElapsed)}</strong></p>
+    <button id="closeExerciseMessage">확인</button>
+  `;
+
+  document.getElementById("exerciseOverlay").classList.add("show");
+
+  document.getElementById("closeExerciseMessage").onclick = () => {
+
+    addCash(exerciseAward);
+
+    document.getElementById("exercisePopup").innerHTML = `
+      <div class="reward-coin">🪙</div>
+      <h2>캐시 획득!</h2>
+      <p>오늘도 정말 고생했어요!</p>
+      <h2 style="color:#D6A52C">
+        +${exerciseAward.toFixed(2)}원
+      </h2>
+      <button id="finishExerciseReward">확인</button>
+    `;
+
+    document.getElementById("finishExerciseReward").onclick = () => {
+      document.getElementById("exerciseOverlay").classList.remove("show");
+    };
+  };
+});
+
+
+// =====================================
+// 20. 페이지 처음 실행
+// =====================================
+
+resizeCanvas();
+
+</script>
+
+</body>
+</html>
