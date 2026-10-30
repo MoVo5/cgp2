@@ -877,12 +877,29 @@ document.getElementById("stopStudyBtn").onclick = () => {
       <button id="finishStudyReward">확인</button>
     `;
 
-    document.getElementById("finishStudyReward").onclick = () => {
+    
+document.getElementById("finishStudyReward").onclick = () => {
 
-      document.getElementById("studyOverlay").classList.remove("show");
+  document.getElementById("studyOverlay").classList.remove("show");
 
-      renderRoute();
-    };
+  // 다음 공부를 시작할 수 있도록 상태 초기화
+  studyFinished = false;
+  studyRunning = false;
+  drawingEnabled = false;
+
+  // 모든 버튼 다시 활성화
+  document.getElementById("drawBtn").disabled = false;
+  document.getElementById("completeBtn").disabled = false;
+  document.getElementById("startStudyBtn").disabled = false;
+  document.getElementById("stopStudyBtn").disabled = false;
+  document.getElementById("resetBtn").disabled = false;
+
+  document.getElementById("studyStatus").textContent =
+    "공부 완료! 새로운 루트를 그리거나 다시 공부해 보세요!";
+
+  renderRoute();
+};
+
   };
 
   renderRoute();
